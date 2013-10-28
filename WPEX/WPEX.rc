@@ -67,6 +67,34 @@ BEGIN
     PUSHBUTTON      "取消",IDC_BUTTON3,262,168,50,21
 END
 
+IDD_DLG_SENDSOCKET DIALOGEX 0, 0, 365, 215
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "封包发送"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    EDITTEXT        IDC_EDIT1,0,0,360,113,ES_MULTILINE | ES_AUTOHSCROLL,WS_EX_DLGMODALFRAME
+    GROUPBOX        "Send",IDC_STATIC,0,116,158,69
+    CONTROL         "持续发送",IDC_RADIO1,"Button",BS_AUTORADIOBUTTON,6,128,48,10
+    CONTROL         "等时发送",IDC_RADIO2,"Button",BS_AUTORADIOBUTTON,6,146,48,10
+    EDITTEXT        IDC_EDIT2,27,161,40,14,ES_AUTOHSCROLL
+    LTEXT           "次数:",IDC_STATIC,6,163,20,8
+    EDITTEXT        IDC_EDIT3,96,161,40,14,ES_AUTOHSCROLL
+    LTEXT           "间隔:",IDC_STATIC,76,163,20,8
+    LTEXT           "ms",IDC_STATIC,140,163,10,8
+    GROUPBOX        "Socket",IDC_STATIC,168,116,191,68
+    CONTROL         "使用原始Socket",IDC_RADIO3,"Button",BS_AUTORADIOBUTTON,175,128,69,10
+    CONTROL         "新建Socket",IDC_RADIO4,"Button",BS_AUTORADIOBUTTON,175,145,53,10
+    LTEXT           "Socket ID:",IDC_STATIC,275,128,34,8
+    EDITTEXT        IDC_EDIT4,314,126,40,14,ES_AUTOHSCROLL
+    CONTROL         "",IDC_IPADDRESS1,"SysIPAddress32",WS_TABSTOP,191,162,100,15
+    LTEXT           "IP:",IDC_STATIC,176,164,10,8
+    LTEXT           "Port:",IDC_STATIC,296,164,17,8
+    EDITTEXT        IDC_EDIT5,315,162,40,14,ES_AUTOHSCROLL
+    GROUPBOX        "Message",IDC_STATIC,0,187,281,24
+    PUSHBUTTON      "发送",IDC_BUTTON1,284,192,36,18
+    PUSHBUTTON      "退出",IDC_BUTTON6,325,192,36,18
+END
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -98,8 +126,26 @@ BEGIN
     IDD_DLGPROCESSLIST, DIALOG
     BEGIN
     END
+
+    IDD_DLG_SENDSOCKET, DIALOG
+    BEGIN
+    END
 END
 #endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Menu
+//
+
+IDR_RMENU MENU
+BEGIN
+    POPUP "右键菜单"
+    BEGIN
+        MENUITEM "清空列表",                        ID_CLEAR
+    END
+END
 
 #endif    // 中文(简体，中国) resources
 /////////////////////////////////////////////////////////////////////////////
@@ -111,6 +157,54 @@ END
 #if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
 LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 #pragma code_page(1252)
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_ABOUTBOX DIALOG 0, 0, 187, 102
+STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "About"
+FONT 8, "MS Shell Dlg"
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,130,81,50,14
+    CTEXT           "WPEX Application v1.0\n\n(c) Copyright 2013",IDC_STATIC,25,57,78,32
+    ICON            IDR_MAINFRAME,IDC_STATIC,55,26,18,20
+    GROUPBOX        "",IDC_STATIC,7,7,115,88
+END
+
+IDD_WPEX_FORM DIALOGEX 0, 0, 361, 214
+STYLE DS_SETFONT | DS_FIXEDSYS | WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS
+EXSTYLE WS_EX_CLIENTEDGE
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
+BEGIN
+    CONTROL         "",IDC_LIST1,"SysListView32",LVS_REPORT | LVS_SINGLESEL | LVS_ALIGNLEFT | WS_BORDER | WS_TABSTOP,0,0,361,214
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO
+BEGIN
+    IDD_ABOUTBOX, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 180
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 95
+    END
+
+    IDD_WPEX_FORM, DIALOG
+    BEGIN
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
 
 #ifdef APSTUDIO_INVOKED
 /////////////////////////////////////////////////////////////////////////////
@@ -205,54 +299,6 @@ END
 // Icon with lowest ID value placed first to ensure application icon
 // remains consistent on all systems.
 IDR_MAINFRAME           ICON                    "res\\WPEX.ico"
-
-/////////////////////////////////////////////////////////////////////////////
-//
-// Dialog
-//
-
-IDD_ABOUTBOX DIALOG 0, 0, 187, 102
-STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
-CAPTION "About"
-FONT 8, "MS Shell Dlg"
-BEGIN
-    DEFPUSHBUTTON   "OK",IDOK,130,81,50,14
-    CTEXT           "WPEX Application v1.0\n\n(c) Copyright 2013",IDC_STATIC,25,57,78,32
-    ICON            IDR_MAINFRAME,IDC_STATIC,55,26,18,20
-    GROUPBOX        "",IDC_STATIC,7,7,115,88
-END
-
-IDD_WPEX_FORM DIALOGEX 0, 0, 361, 214
-STYLE DS_SETFONT | DS_FIXEDSYS | WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS
-EXSTYLE WS_EX_CLIENTEDGE
-FONT 8, "MS Shell Dlg", 0, 0, 0x1
-BEGIN
-    CONTROL         "",IDC_LIST1,"SysListView32",LVS_REPORT | LVS_SINGLESEL | LVS_ALIGNLEFT | WS_BORDER | WS_TABSTOP,0,0,361,214
-END
-
-
-/////////////////////////////////////////////////////////////////////////////
-//
-// DESIGNINFO
-//
-
-#ifdef APSTUDIO_INVOKED
-GUIDELINES DESIGNINFO
-BEGIN
-    IDD_ABOUTBOX, DIALOG
-    BEGIN
-        LEFTMARGIN, 7
-        RIGHTMARGIN, 180
-        TOPMARGIN, 7
-        BOTTOMMARGIN, 95
-    END
-
-    IDD_WPEX_FORM, DIALOG
-    BEGIN
-    END
-END
-#endif    // APSTUDIO_INVOKED
-
 
 /////////////////////////////////////////////////////////////////////////////
 //

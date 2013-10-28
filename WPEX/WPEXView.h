@@ -6,12 +6,13 @@
 #include <atltypes.h>
 #include "CustomDef.h"
 #include "WPEXUtily.h"
+#include "DlgSendSocket.h"
 
-UINT g_viewIndex=-1;
+UINT g_viewIndex = -1;
 class CWPEXView : public CDialogImpl<CWPEXView>
 {
 private:
-	UINT m_viewIndex;
+    UINT m_viewIndex;
     CListViewCtrl m_listCtrl;
 public:
     enum { IDD = IDD_WPEX_FORM };
@@ -24,6 +25,9 @@ public:
     BEGIN_MSG_MAP( CWPEXView )
     MESSAGE_HANDLER( WM_INITDIALOG, OnInitDialog )
     MESSAGE_HANDLER( WM_SIZE, OnSize )
+    NOTIFY_HANDLER( IDC_LIST1, NM_DBLCLK, OnDbClickListCtrl )
+    NOTIFY_HANDLER( IDC_LIST1, NM_RCLICK, OnRClickListCtrl )
+    COMMAND_ID_HANDLER( ID_CLEAR, OnClear )
     END_MSG_MAP()
     
     // Handler prototypes (uncomment arguments if needed):
@@ -41,16 +45,16 @@ public:
         m_listCtrl.InsertColumn( 3, _T( "size" ), LVCFMT_LEFT, 50 );
         m_listCtrl.InsertColumn( 4, _T( "Function" ), LVCFMT_LEFT, 100 );
         m_listCtrl.InsertColumn( 5, _T( "Content" ), LVCFMT_LEFT, 600 );
-
-		g_viewIndex++;
-		m_viewIndex=g_viewIndex;
+        
+        g_viewIndex++;
+        m_viewIndex = g_viewIndex;
         return 0;
     }
-
-	UINT GetIndex()const
-	{
-		return m_viewIndex;
-	}
+    
+    UINT GetIndex()const
+    {
+        return m_viewIndex;
+    }
     
     LRESULT OnSize( UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/ )
     {
@@ -71,6 +75,7 @@ public:
         BYTE* pData = ( BYTE* )lpSocketData->lpData;
         
         int packetIndex = m_listCtrl.GetItemCount();
+        
         TCHAR sPacketIndex[8] = {0};
         _stprintf_s( sPacketIndex, _T( "%d" ), packetIndex + 1 );
         m_listCtrl.InsertItem( packetIndex, sPacketIndex );
@@ -103,5 +108,39 @@ public:
         m_listCtrl.SetItemText( packetIndex, 5, sData );
         delete sData;
         sData = NULL;
+    }
+    
+    LRESULT OnDbClickListCtrl( int idCtrl, LPNMHDR pnmh, BOOL& bHandled )
+    {
+        int selIndex = m_listCtrl.GetSelectedIndex();
+        if ( -1 == selIndex )
+        {
+            return 0;
+        }
+        
+        CDlgSendSocket dlgSendSocket;
+        if ( IDOK == dlgSendSocket.DoModal() )
+        {
+        
+        }
+        return 0;
+    }
+    
+    LRESULT OnRClickListCtrl( int idCtrl, LPNMHDR pnmh, BOOL& bHandled )
+    {
+        POINT ptCursor;
+        ::GetCursorPos( &ptCursor );
+        
+        CMenu menu;
+        menu.LoadMenu( IDR_RMENU );
+        CMenu menuSub = menu.GetSubMenu( 0 );
+        menuSub.TrackPopupMenu( TPM_LEFTALIGN, ptCursor.x, ptCursor.y, m_hWnd );
+        return 0;
+    }
+    
+    LRESULT OnClear( WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/ )
+    {
+        m_listCtrl.DeleteAllItems();
+        return 0;
     }
 };

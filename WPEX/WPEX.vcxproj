@@ -123,6 +123,7 @@
     <ClInclude Include="CustomDef.h" />
     <ClInclude Include="DlgFilter.h" />
     <ClInclude Include="DlgProcessList.h" />
+    <ClInclude Include="DlgSendSocket.h" />
     <ClInclude Include="DlgTrace.h" />
     <ClInclude Include="LeftFrm.h" />
     <ClInclude Include="MainFrm.h" />
