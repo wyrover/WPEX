@@ -26,12 +26,18 @@ void SendDataToClient( BOOL bSend, SOCKET s, LPVOID lpData, DWORD dwDataLen, LPC
         DWORD dwSocketSize = sizeof( SOCKETDATA ) + dwDataLen - 1;
         SOCKETDATA* pSocketData = ( SOCKETDATA* )new BYTE[dwSocketSize];
         memset( pSocketData, 0, dwSocketSize );
+		pSocketData->cbSize=dwSocketSize;
         pSocketData->s = s;
         pSocketData->dwDataLen = dwDataLen;
         memcpy( pSocketData->lpData, lpData, dwDataLen );
         _tcscpy_s( pSocketData->sFuncName, FUNCNAMELEN, lpszFuncName );
         pSocketData->dwPID = GetCurrentProcessId();
-        
+
+		HWND hClient=FindClient();
+		DWORD dwClientPID=0;
+		GetWindowThreadProcessId(hClient,&dwClientPID);
+        int dRet=WSADuplicateSocket(s,dwClientPID,&pSocketData->WSAProtocloInfo);
+
         int sockSrcAddrLen = sizeof( pSocketData->srcsockaddr );
         int sockDestAddrLen = sizeof( pSocketData->destsockaddr );
         if ( bSend )

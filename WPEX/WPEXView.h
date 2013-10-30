@@ -80,6 +80,10 @@ public:
         _stprintf_s( sPacketIndex, _T( "%d" ), packetIndex + 1 );
         m_listCtrl.InsertItem( packetIndex, sPacketIndex );
         
+        SOCKETDATA* pSocketData = ( SOCKETDATA* )new BYTE[lpSocketData->cbSize];
+        memcpy_s( pSocketData, lpSocketData->cbSize, lpSocketData, lpSocketData->cbSize );
+        m_listCtrl.SetItemData( packetIndex, ( DWORD_PTR )( pSocketData ) );
+        
         TCHAR sSource[MAX_PATH] = {0};
         char* lpSrcIP = inet_ntoa( lpSocketData->srcsockaddr.sin_addr );
         USHORT nSrcPort = htons( lpSocketData->srcsockaddr.sin_port );
@@ -89,13 +93,13 @@ public:
         pSrcIP = NULL;
         m_listCtrl.SetItemText( packetIndex, 1, sSource );
         
-        TCHAR sDestination[MAX_PATH] = {0};
-        char* lpDestIP = inet_ntoa( lpSocketData->destsockaddr.sin_addr );
-        USHORT nDestPort = htons( lpSocketData->destsockaddr.sin_port );
-        TCHAR* pDestIP = AnsiToUnicode( lpDestIP );
-        _stprintf_s( sDestination, _T( "%s:%u" ), pDestIP, nDestPort );
-        delete pDestIP;
-        pDestIP = NULL;
+		TCHAR sDestination[MAX_PATH] = {0};
+		char* lpDestIP = inet_ntoa( lpSocketData->destsockaddr.sin_addr );
+		USHORT nDestPort = htons( lpSocketData->destsockaddr.sin_port );
+		TCHAR* pDestIP = AnsiToUnicode( lpDestIP );
+		_stprintf_s( sDestination, _T( "%s:%u" ), pDestIP, nDestPort );
+		delete pDestIP;
+		pDestIP = NULL;
         m_listCtrl.SetItemText( packetIndex, 2, sDestination );
         
         TCHAR sDataLen[10] = {0};
@@ -118,7 +122,9 @@ public:
             return 0;
         }
         
-        CDlgSendSocket dlgSendSocket;
+        
+        SOCKETDATA* pSocketData = ( SOCKETDATA* )m_listCtrl.GetItemData( selIndex );
+        CDlgSendSocket dlgSendSocket( pSocketData );
         if ( IDOK == dlgSendSocket.DoModal() )
         {
         
@@ -140,6 +146,15 @@ public:
     
     LRESULT OnClear( WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/ )
     {
+        for ( int i = 0; i < m_listCtrl.GetItemCount(); i++ )
+        {
+            SOCKETDATA* pSocketData = ( SOCKETDATA* )m_listCtrl.GetItemData( i );
+            if ( NULL != pSocketData )
+            {
+                delete pSocketData;
+                pSocketData = NULL;
+            }
+        }
         m_listCtrl.DeleteAllItems();
         return 0;
     }
