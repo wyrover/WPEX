@@ -127,6 +127,8 @@ public:
         m_splitter.SetSplitterPanes( m_leftFrame, m_rightFrame );
         UpdateLayout();
         m_splitter.SetSplitterPos( LEFTFRAMEWIDTH );
+
+//		m_rightFrame.AddPage(_T("Hello"),100);
         return 0;
     }
     
@@ -137,7 +139,7 @@ public:
         ATLASSERT( pLoop != NULL );
         pLoop->RemoveMessageFilter( this );
         pLoop->RemoveIdleHandler( this );
-        
+        		
         bHandled = FALSE;
         return 1;
     }

@@ -26,20 +26,22 @@ void SendDataToClient( BOOL bSend, SOCKET s, LPVOID lpData, DWORD dwDataLen, LPC
         DWORD dwSocketSize = sizeof( SOCKETDATA ) + dwDataLen - 1;
         SOCKETDATA* pSocketData = ( SOCKETDATA* )new BYTE[dwSocketSize];
         memset( pSocketData, 0, dwSocketSize );
-		pSocketData->cbSize=dwSocketSize;
+        pSocketData->cbSize = dwSocketSize;
         pSocketData->s = s;
         pSocketData->dwDataLen = dwDataLen;
         memcpy( pSocketData->lpData, lpData, dwDataLen );
         _tcscpy_s( pSocketData->sFuncName, FUNCNAMELEN, lpszFuncName );
         pSocketData->dwPID = GetCurrentProcessId();
-
-		HWND hClient=FindClient();
-		DWORD dwClientPID=0;
-		GetWindowThreadProcessId(hClient,&dwClientPID);
-        int dRet=WSADuplicateSocket(s,dwClientPID,&pSocketData->WSAProtocloInfo);
-
+        
+        HWND hClient = FindClient();
+        DWORD dwClientPID = 0;
+        GetWindowThreadProcessId( hClient, &dwClientPID );
+        int dRet = WSADuplicateSocket( s, dwClientPID, &pSocketData->WSAProtocloInfo );
+        
         int sockSrcAddrLen = sizeof( pSocketData->srcsockaddr );
         int sockDestAddrLen = sizeof( pSocketData->destsockaddr );
+        
+        pSocketData->bSend = bSend;
         if ( bSend )
         {
             getsockname( s, ( sockaddr* )&pSocketData->srcsockaddr, &sockSrcAddrLen );
@@ -96,19 +98,19 @@ int WINAPI HookSend( SOCKET s, const char *buf, int len, int flags )
 int WINAPI HookRecv( SOCKET s, const char *buf, int len, int flags )
 {
     int iRet = Sys_recv( s, buf, len, flags );
-	if ( WPEX_START == m_wndNotify.GetStatus() )
-	{
-		SendDataToClient( FALSE, s, ( LPVOID )buf, len, _T( "Recv" ) );
-	}
+    if ( WPEX_START == m_wndNotify.GetStatus() )
+    {
+        SendDataToClient( FALSE, s, ( LPVOID )buf, len, _T( "Recv" ) );
+    }
     return iRet;
 }
 
 int WINAPI HookSendto( SOCKET s, const char *buf, int len, int flags, const struct sockaddr *to, int tolen )
 {
-	if ( WPEX_START == m_wndNotify.GetStatus() )
-	{
-		SendDataToClient( TRUE, s, ( LPVOID )buf, len, _T( "Sendto" ) );
-	}
+    if ( WPEX_START == m_wndNotify.GetStatus() )
+    {
+        SendDataToClient( TRUE, s, ( LPVOID )buf, len, _T( "Sendto" ) );
+    }
     return Sys_sendto( s, buf, len, flags, to, tolen );
 }
 
@@ -116,18 +118,18 @@ int WINAPI HookRecvfrom( SOCKET s, char *buf, int len, int flags, struct sockadd
 {
     int iRet = Sys_recvfrom( s, buf, len, flags, from, fromlen );
     if ( WPEX_START == m_wndNotify.GetStatus() )
-	{
-		SendDataToClient( FALSE, s, ( LPVOID )buf, len, _T( "Recvfrom" ) );
-	}
+    {
+        SendDataToClient( FALSE, s, ( LPVOID )buf, len, _T( "Recvfrom" ) );
+    }
     return iRet;
 }
 
 int WINAPI HookWSASend( SOCKET s, LPWSABUF lpBuffers, DWORD dwBufferCount, LPDWORD lpNumberOfBytesSent, DWORD dwFlags, LPWSAOVERLAPPED lpOverlapped, LPWSAOVERLAPPED_COMPLETION_ROUTINE lpCompletionRoutine )
 {
     if ( WPEX_START == m_wndNotify.GetStatus() )
-	{
-		SendDataToClient( TRUE, s, ( LPVOID )lpBuffers->buf, lpBuffers->len, _T( "WSASend" ) );
-	}
+    {
+        SendDataToClient( TRUE, s, ( LPVOID )lpBuffers->buf, lpBuffers->len, _T( "WSASend" ) );
+    }
     return Sys_WSASend( s, lpBuffers, dwBufferCount, lpNumberOfBytesSent, dwFlags, lpOverlapped, lpCompletionRoutine );
 }
 
@@ -144,9 +146,9 @@ int WINAPI HookWSARecv( SOCKET s, LPWSABUF lpBuffers, DWORD dwBufferCount, LPDWO
 int WINAPI HookWSASendTo( SOCKET s, LPWSABUF lpBuffers, DWORD dwBufferCount, LPDWORD lpNumberOfBytesSent, DWORD dwFlags, const struct sockaddr *lpTo, int iToLen, LPWSAOVERLAPPED lpOverlapped, LPWSAOVERLAPPED_COMPLETION_ROUTINE lpCompletionRoutine )
 {
     if ( WPEX_START == m_wndNotify.GetStatus() )
-	{
-		SendDataToClient( TRUE, s, ( LPVOID )lpBuffers->buf, lpBuffers->len, _T( "WSASendTo" ) );
-	}
+    {
+        SendDataToClient( TRUE, s, ( LPVOID )lpBuffers->buf, lpBuffers->len, _T( "WSASendTo" ) );
+    }
     return Sys_WSASendTo( s, lpBuffers, dwBufferCount, lpNumberOfBytesSent, dwFlags, lpTo, iToLen, lpOverlapped, lpCompletionRoutine );
 }
 
@@ -154,9 +156,9 @@ int WINAPI HookWSARecvFrom( SOCKET s, LPWSABUF lpBuffers, DWORD dwBufferCount, L
 {
     int iRet = Sys_WSARecvFrom( s, lpBuffers, dwBufferCount, lpNumberOfBytesRecvd, lpFlags, lpFrom, lpFromlen, lpOverlapped, lpCompletionRoutine );
     if ( WPEX_START == m_wndNotify.GetStatus() )
-	{
-		SendDataToClient( FALSE, s, ( LPVOID )lpBuffers->buf, lpBuffers->len, _T( "WSARecvFrom" ) );
-	}
+    {
+        SendDataToClient( FALSE, s, ( LPVOID )lpBuffers->buf, lpBuffers->len, _T( "WSARecvFrom" ) );
+    }
     return iRet;
 }
 

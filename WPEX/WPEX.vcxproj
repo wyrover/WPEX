@@ -126,6 +126,7 @@
     <ClInclude Include="DlgSendSocket.h" />
     <ClInclude Include="DlgTrace.h" />
     <ClInclude Include="LeftFrm.h" />
+    <ClInclude Include="ListViewCtrlEx.h" />
     <ClInclude Include="MainFrm.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="RightFrm.h" />

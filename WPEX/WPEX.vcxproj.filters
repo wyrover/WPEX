@@ -71,6 +71,9 @@
     <ClInclude Include="SocketHandler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="ListViewCtrlEx.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="WPEX.rc">

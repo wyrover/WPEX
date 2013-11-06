@@ -7,13 +7,14 @@
 #include "CustomDef.h"
 #include "WPEXUtily.h"
 #include "DlgSendSocket.h"
+#include "ListViewCtrlEx.h"
 
 UINT g_viewIndex = -1;
 class CWPEXView : public CDialogImpl<CWPEXView>
 {
 private:
     UINT m_viewIndex;
-    CListViewCtrl m_listCtrl;
+    CListViewCtrlEx m_listCtrl;
 public:
     enum { IDD = IDD_WPEX_FORM };
     
@@ -28,6 +29,8 @@ public:
     NOTIFY_HANDLER( IDC_LIST1, NM_DBLCLK, OnDbClickListCtrl )
     NOTIFY_HANDLER( IDC_LIST1, NM_RCLICK, OnRClickListCtrl )
     COMMAND_ID_HANDLER( ID_CLEAR, OnClear )
+    NOTIFY_HANDLER( IDC_LIST1, LVN_COLUMNCLICK, OnLvnColumnClick )
+    REFLECT_NOTIFICATIONS() //消息反射通知宏 必须要加的，这个东西折磨了我好多天了，哈哈
     END_MSG_MAP()
     
     // Handler prototypes (uncomment arguments if needed):
@@ -36,8 +39,10 @@ public:
     //	LRESULT NotifyHandler(int /*idCtrl*/, LPNMHDR /*pnmh*/, BOOL& /*bHandled*/)
     LRESULT OnInitDialog( UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/ )
     {
-        m_listCtrl = GetDlgItem( IDC_LIST1 );
-        
+        //        m_listCtrl = GetDlgItem( IDC_LIST1 );
+        m_listCtrl.SubclassWindow( GetDlgItem( IDC_LIST1 ) );
+        m_listCtrl.ModifyStyle( 0, LVS_OWNERDRAWFIXED );
+        m_listCtrl.SetItemHeight( 30 );
         m_listCtrl.SetExtendedListViewStyle( LVS_EX_FULLROWSELECT | LVS_EX_GRIDLINES, 0 );
         m_listCtrl.InsertColumn( 0, _T( "Packet" ), LVCFMT_LEFT, 50 );
         m_listCtrl.InsertColumn( 1, _T( "Source" ), LVCFMT_LEFT, 150 );
@@ -48,7 +53,28 @@ public:
         
         g_viewIndex++;
         m_viewIndex = g_viewIndex;
+        
+        // test
+        // 		for (int i=0;i<20;i++)
+        // 		{
+        // 			CString s;
+        // 			s.Format(_T("测试---------%d"),i);
+        // 			int id=m_listCtrl.InsertItem(i,s);
+        // 			m_listCtrl.SetItemText(id,1,_T("HElo"));
+        // 			m_listCtrl.SetItemText(id,2,s);
+        // 		}
         return 0;
+    }
+    
+    LRESULT OnLvnColumnClick( int wParam, LPNMHDR lParam, BOOL& bHandled )
+    {
+        m_listCtrl.SortItems( &CWPEXView::CompareFunc, 0 );
+        return 0;
+    }
+    
+    static int CALLBACK CompareFunc( LPARAM lParam1, LPARAM lParam2, LPARAM lParamSort )
+    {
+        return FALSE;
     }
     
     UINT GetIndex()const
@@ -93,13 +119,13 @@ public:
         pSrcIP = NULL;
         m_listCtrl.SetItemText( packetIndex, 1, sSource );
         
-		TCHAR sDestination[MAX_PATH] = {0};
-		char* lpDestIP = inet_ntoa( lpSocketData->destsockaddr.sin_addr );
-		USHORT nDestPort = htons( lpSocketData->destsockaddr.sin_port );
-		TCHAR* pDestIP = AnsiToUnicode( lpDestIP );
-		_stprintf_s( sDestination, _T( "%s:%u" ), pDestIP, nDestPort );
-		delete pDestIP;
-		pDestIP = NULL;
+        TCHAR sDestination[MAX_PATH] = {0};
+        char* lpDestIP = inet_ntoa( lpSocketData->destsockaddr.sin_addr );
+        USHORT nDestPort = htons( lpSocketData->destsockaddr.sin_port );
+        TCHAR* pDestIP = AnsiToUnicode( lpDestIP );
+        _stprintf_s( sDestination, _T( "%s:%u" ), pDestIP, nDestPort );
+        delete pDestIP;
+        pDestIP = NULL;
         m_listCtrl.SetItemText( packetIndex, 2, sDestination );
         
         TCHAR sDataLen[10] = {0};

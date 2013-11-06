@@ -3,80 +3,131 @@
 
 class CSocketSendHandler
 {
-public:
-    virtual BOOL HandleRequest() = 0;
-};
-
-class COpenSocketHandler : public CSocketSendHandler
-{
 private:
+    SENDMODEL m_sendModel;
+    SENDTYPE m_sendType;
+    CString m_sIP;
+    CString m_sPort;
+    CString m_sRawSocketID;
+    char* m_packetData;
+    DWORD m_dwPacketSize;
     WSAPROTOCOL_INFO* m_pPtotocol;
-    const char* m_buf;
-    int m_iLen;
 public:
-    COpenSocketHandler( WSAPROTOCOL_INFO* pProtocol, const char* buf, int len, DWORD dwTimeout = 0 )
+    CSocketSendHandler()
     {
-        m_pPtotocol = pProtocol;
-        m_buf = buf;
-        m_iLen = len;
-    }
-    virtual ~COpenSocketHandler()
-    {
-    
-    }
-    
-    BOOL HandleRequest()
-    {
-        // 		WSABUF wsaBuf;
-        // 		wsaBuf.buf=(char*)m_buf;
-        // 		wsaBuf.len=m_iLen;
-        // 		DWORD NumberOfBytesSent=0;
-        // 		int iRet=WSASend(m_socket,&wsaBuf,1,&NumberOfBytesSent,0,0,0);
+        m_sendModel = SEND_BY_TIMES;
+        m_sendType = SEND_BY_RAWSOCKET;
+        m_packetData = NULL;
+        m_pPtotocol = NULL;
+        m_dwPacketSize = 0;
         
-        // 以上代码也可用
-        SOCKET socket = WSASocket( AF_INET, SOCK_STREAM, IPPROTO_TCP, m_pPtotocol, 0, WSA_FLAG_OVERLAPPED );
-        int iRet = send( socket, m_buf, m_iLen, 0 );
-        return ( iRet != SOCKET_ERROR );
-    }
-};
-
-class CNewSocketHandler: public CSocketSendHandler
-{
-private:
-    USHORT m_uPort;
-    char m_szIPAddr[30];
-    SOCKET m_socket;
-    char* m_buf;
-    int m_iBufSize;
-    SOCKADDR * m_destAddr;
-public:
-    CNewSocketHandler( SOCKET socket, const char* sIP, USHORT uPort, const char* buf, int bufLen )
-    {
-        m_socket = socket;
-        strcpy_s( m_szIPAddr, 30, sIP );
-        m_uPort = uPort;
-        m_iBufSize = bufLen;
-        m_buf = new char[m_iBufSize];
-        memcpy_s( m_buf, m_iBufSize, buf, bufLen );
+        WSADATA wsaData;
+        WSAStartup( 0x202, &wsaData );
     }
     
-    virtual ~CNewSocketHandler()
+    virtual ~CSocketSendHandler()
     {
-    
+        if ( NULL != m_packetData )
+        {
+            delete m_packetData;
+            m_packetData = NULL;
+        }
+        
+        if ( NULL != m_pPtotocol )
+        {
+            delete m_pPtotocol;
+            m_pPtotocol = NULL;
+        }
+        
+        //绝对不能调用WSACleanup(),会使原始进程的远程主机关闭连接
     }
     
-    BOOL HandleRequest()
+    void SetSendModel( SENDMODEL sendModel )
     {
-        sockaddr_in sa ;
-        
-        sa.sin_family           = AF_INET ;
-        
-        sa.sin_port             = htons( m_uPort ) ;
-        
-        sa.sin_addr.S_un.S_addr = inet_addr( m_szIPAddr ) ;
-        
-        connect( m_socket, ( SOCKADDR * ) &sa, sizeof( sa ) ) ;
-        int iRet = send( m_socket, m_buf, m_iBufSize, 0 );
+        m_sendModel = sendModel;
+    }
+    
+    void SendType( SENDTYPE sendType )
+    {
+        m_sendType = sendType;
+    }
+    
+    void SetIP( CString sIP )
+    {
+        m_sIP = sIP;
+    }
+    
+    void SetPort( CString sPort )
+    {
+        m_sPort = sPort;
+    }
+    
+    void SetRawSocketID( CString sRawSocketID )
+    {
+        m_sRawSocketID = sRawSocketID;
+    }
+    
+    void SetPacket( char* sPacket , DWORD dwPacketSize )
+    {
+        if ( NULL != m_packetData )
+        {
+            delete m_packetData;
+            m_packetData = NULL;
+        }
+        if ( dwPacketSize > 0 )
+        {
+            m_dwPacketSize = dwPacketSize;
+            m_packetData = new char[dwPacketSize];
+            memcpy_s( m_packetData, dwPacketSize, sPacket, dwPacketSize );
+        }
+    }
+    
+    void SetProtocolInfo( WSAPROTOCOL_INFO* pInfo )
+    {
+        if ( NULL != m_pPtotocol )
+        {
+            delete m_pPtotocol;
+            m_pPtotocol = NULL;
+        }
+        m_pPtotocol = new WSAPROTOCOL_INFO();
+        memcpy_s( m_pPtotocol, sizeof( WSAPROTOCOL_INFO ), pInfo, sizeof( WSAPROTOCOL_INFO ) );
+    }
+    
+    BOOL Send()
+    {
+        switch ( m_sendType )
+        {
+            case SEND_BY_NEWSOCKET:
+            {
+                // 				sockaddr_in sa ;
+                //
+                // 				sa.sin_family           = AF_INET ;
+                //
+                // 				sa.sin_port             = htons( m_uPort ) ;
+                //
+                // 				sa.sin_addr.S_un.S_addr = inet_addr( m_szIPAddr ) ;
+                //
+                // 				connect( m_socket, ( SOCKADDR * ) &sa, sizeof( sa ) ) ;
+                // 				int iRet = send( m_socket, m_buf, m_iBufSize, 0 );
+                break;
+            }
+            case SEND_BY_RAWSOCKET:
+            {
+                // 		WSABUF wsaBuf;
+                // 		wsaBuf.buf=(char*)m_buf;
+                // 		wsaBuf.len=m_iLen;
+                // 		DWORD NumberOfBytesSent=0;
+                // 		int iRet=WSASend(m_socket,&wsaBuf,1,&NumberOfBytesSent,0,0,0);
+                
+                // 以上代码也可用
+                SOCKET socket = WSASocket( AF_INET, SOCK_STREAM, IPPROTO_TCP, m_pPtotocol, 0, 0 );
+                int iRet = send( socket, m_packetData, m_dwPacketSize, 0 );
+                return ( iRet != SOCKET_ERROR );
+                break;
+            }
+            default:
+                break;
+        }
         return FALSE;
     }
 };

@@ -7,11 +7,8 @@
 class CDlgSendSocket : public CDialogImpl<CDlgSendSocket>
 {
 private:
-    enum SENDTYPE
-    {
-        SEND_BY_NEWSOCKET,
-        SEND_BY_RAWSOCKET
-    } m_sendType;
+    SENDTYPE m_sendType;
+    SENDMODEL m_sendModel;
     CSocketSendHandler* m_pSocketHandler;
     SOCKETDATA* m_pSocketData;
 public:
@@ -35,8 +32,10 @@ public:
     
     CDlgSendSocket( SOCKETDATA* pSocketData )
     {
-        m_pSocketHandler = NULL;
+        m_pSocketHandler = new CSocketSendHandler();
         m_pSocketData = pSocketData;
+        m_sendModel = SEND_BY_TIMES;
+        m_sendType = SEND_BY_RAWSOCKET;
     }
     
     virtual ~CDlgSendSocket()
@@ -50,7 +49,7 @@ public:
     }
     
     // 设置"send"组下的按钮状态
-    void OnSendCtrlStatus( UINT uRadioID )
+    void OnSendModel( UINT uRadioID )
     {
         CButton btn = GetDlgItem( uRadioID );
         btn.SetCheck( BST_CHECKED );
@@ -59,17 +58,19 @@ public:
         CEdit editSendTime = GetDlgItem( IDC_EDIT3 );
         if ( IDC_RADIO1 == uRadioID )
         {
+            m_sendModel = SEND_BY_CONBINUOUSLY;
             editSendCount.EnableWindow( FALSE );
             editSendTime.EnableWindow( FALSE );
         }
         else if ( IDC_RADIO2 == uRadioID )
         {
+            m_sendModel = SEND_BY_TIMES;
             editSendCount.EnableWindow( TRUE );
             editSendTime.EnableWindow( TRUE );
         }
     }
     
-    void OnSocketType( UINT uRadioID )
+    void OnSendType( UINT uRadioID )
     {
         CButton btn = GetDlgItem( uRadioID );
         btn.SetCheck( BST_CHECKED );
@@ -97,28 +98,28 @@ public:
     // 持续发送
     LRESULT OnRadioSendByContinue( WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/ )
     {
-        OnSendCtrlStatus( IDC_RADIO1 );
+        OnSendModel( IDC_RADIO1 );
         return 0;
     }
     
     // 按次发送
     LRESULT OnRadioSendByTime( WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/ )
     {
-        OnSendCtrlStatus( IDC_RADIO2 );
+        OnSendModel( IDC_RADIO2 );
         return 0;
     }
     
     // 使用原始socket
     LRESULT OnRadioSocketRaw( WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/ )
     {
-        OnSocketType( IDC_RADIO3 );
+        OnSendType( IDC_RADIO3 );
         return 0;
     }
     
     // 新建socket
     LRESULT OnRadioSocketNew( WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/ )
     {
-        OnSocketType( IDC_RADIO4 );
+        OnSendType( IDC_RADIO4 );
         return 0;
     }
     
@@ -126,29 +127,55 @@ public:
     {
         CenterWindow( GetParent() );
         
-        OnSendCtrlStatus( IDC_RADIO2 );
-        OnSocketType( IDC_RADIO3 );
+        OnSendModel( IDC_RADIO2 );
+        OnSendType( IDC_RADIO3 );
         
-        TCHAR sDestination[MAX_PATH] = {0};
+        CEdit editRawSID = GetDlgItem( IDC_EDIT4 );			// 原始SOCKET ID
+        CString sSID;
+        sSID.Format( _T( "%u" ), ( DWORD )m_pSocketData->s );
+        editRawSID.SetWindowText( sSID );
+        
         char* lpDestIP = inet_ntoa( m_pSocketData->destsockaddr.sin_addr );	// 目标地址
-        USHORT nDestPort = htons( m_pSocketData->destsockaddr.sin_port );	// 目标端口号
-        TCHAR sPort[8] = {0};
-        _stprintf_s( sPort, 8, _T( "%u" ), nDestPort );
         TCHAR* pDestIP = AnsiToUnicode( lpDestIP );
+        CString sDestIP = pDestIP;
         CIPAddressCtrl ipAddrCtrl = GetDlgItem( IDC_IPADDRESS1 );
         ipAddrCtrl.SetWindowText( pDestIP );
-        CEdit editPort = GetDlgItem( IDC_EDIT5 );
-        editPort.SetWindowText( sPort );
-        
-        TCHAR* sData = AnsiToUnicode( ( const char* )&m_pSocketData->lpData );
-        CEdit editData = GetDlgItem( IDC_EDIT1 );
-        editData.SetWindowText( sData );
-        
-        delete sData;
-        sData = NULL;
         delete pDestIP;
         pDestIP = NULL;
         
+        USHORT nDestPort = htons( m_pSocketData->destsockaddr.sin_port );	// 目标端口号
+        CString sDestPort;
+        sDestPort.Format( _T( "%u" ), nDestPort );
+        CEdit editPort = GetDlgItem( IDC_EDIT5 );
+        editPort.SetWindowText( sDestPort );
+        
+        char* lpSrcIP = inet_ntoa( m_pSocketData->srcsockaddr.sin_addr );	// 源地址
+        TCHAR* pSrcIP = AnsiToUnicode( lpSrcIP );
+        CString sSrcIP = pSrcIP;
+        delete pSrcIP;
+        pSrcIP = NULL;
+        
+        USHORT nSrcPort = htons( m_pSocketData->srcsockaddr.sin_port );	// 源端口号
+        CString sSrcPort;
+        sSrcPort.Format( _T( "%u" ), nSrcPort );
+        
+        CString sTitle;						// 设置窗口标题
+        GetWindowText( sTitle );
+        if ( m_pSocketData->bSend )
+        {
+            sTitle.AppendFormat( _T( " %s:%s -> %s:%s" ), sSrcIP, sSrcPort, sDestIP, sDestPort );
+        }
+        else
+            sTitle.AppendFormat( _T( " %s:%s -> %s:%s" ), sDestIP, sDestPort, sSrcIP, sSrcPort );
+        SetWindowText( sTitle );
+        
+        TCHAR* sData = AnsiToUnicode( ( const char* )&m_pSocketData->lpData );	// 数据
+        CEdit editData = GetDlgItem( IDC_EDIT1 );
+        editData.SetWindowText( sData );
+        delete sData;
+        sData = NULL;
+        
+        m_pSocketHandler->SetProtocolInfo( &m_pSocketData->WSAProtocloInfo );
         return TRUE;
     }
     
@@ -160,55 +187,35 @@ public:
     
     LRESULT OnSend( WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/, BOOL& /*bHandled*/ )
     {
-        WORD wVersionRequested;
-        WSADATA wsaData;
-        int err;
-        wVersionRequested = MAKEWORD( 2, 2 );
-        err = WSAStartup( wVersionRequested, &wsaData );
-        assert( err == 0 );
-        
         CEdit editData = GetDlgItem( IDC_EDIT1 );
         CString sData;
         editData.GetWindowText( sData );
         char* ansiData = UnicodeToAnsi( sData );
-        int iDatalen = sData.GetLength() * sizeof( TCHAR );
-        if ( SEND_BY_NEWSOCKET == m_sendType )
-        {
-            CIPAddressCtrl ipAddrCtrl = GetDlgItem( IDC_IPADDRESS1 );
-            CString sIP;
-            ipAddrCtrl.GetWindowText( sIP );
-            char* sAnsiIP = UnicodeToAnsi( sIP );
-            CEdit editPort = GetDlgItem( IDC_EDIT5 );
-            CString sPort;
-            editPort.GetWindowText( sPort );
-            m_pSocketHandler = new CNewSocketHandler( m_pSocketData->s, sAnsiIP, _ttoi( sPort ), ( const char* )&m_pSocketData->lpData, m_pSocketData->dwDataLen );
-        }
-        else if ( SEND_BY_RAWSOCKET == m_sendType )
-        {
-            m_pSocketHandler = new COpenSocketHandler( &m_pSocketData->WSAProtocloInfo, ansiData, iDatalen );
-        }
-        
-        if ( NULL != m_pSocketHandler )
-        {
-            if ( !m_pSocketHandler->HandleRequest() )
-            {
-                MessageBox( _T( "发送失败" ), _T( "发生错误" ), MB_OK );
-            }
-        }
-        
+        int iDatalen = strlen( ansiData );
+        m_pSocketHandler->SetPacket( ansiData, iDatalen );
         delete ansiData;
         ansiData = NULL;
+        
+        CIPAddressCtrl ipAddrCtrl = GetDlgItem( IDC_IPADDRESS1 );
+        CString sIP;
+        ipAddrCtrl.GetWindowText( sIP );
+        m_pSocketHandler->SetIP( sIP );
+        
+        CEdit editPort = GetDlgItem( IDC_EDIT5 );
+        CString sPort;
+        editPort.GetWindowText( sPort );
+        m_pSocketHandler->SetPort( sPort );
+        
+        if ( !m_pSocketHandler->Send() )
+        {
+            MessageBox( _T( "发送失败" ), _T( "发生错误" ), MB_OK );
+        }
+        
         return 0;
     }
     
     void CloseDlg()
     {
-        if ( NULL != m_pSocketHandler )
-        {
-            delete m_pSocketHandler;
-            m_pSocketHandler = NULL;
-        }
-        
         EndDialog( IDCANCEL );
     }
     

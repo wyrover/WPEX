@@ -11,6 +11,7 @@ static const int WM_STOPWPEX = WM_USER + 102;
 
 struct SOCKETDATA
 {
+	BOOL bSend;
     DWORD cbSize;
     DWORD dwPID;
     SOCKET s;
@@ -20,4 +21,16 @@ struct SOCKETDATA
     TCHAR sFuncName[FUNCNAMELEN];
     DWORD dwDataLen;
     BYTE lpData[1];
+};
+
+enum SENDMODEL
+{
+	SEND_BY_CONBINUOUSLY,	// 持续发送
+	SEND_BY_TIMES			// 按次发送
+};
+
+enum SENDTYPE
+{
+	SEND_BY_RAWSOCKET,		// 使用原始SOCKET发送
+	SEND_BY_NEWSOCKET		// 使用新SOCKET发送
 };
