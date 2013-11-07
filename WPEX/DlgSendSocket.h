@@ -206,6 +206,11 @@ public:
         editPort.GetWindowText( sPort );
         m_pSocketHandler->SetPort( sPort );
         
+        CString sSendTimes;
+        CEdit editSendTimes = GetDlgItem( IDC_EDIT2 );
+        editSendTimes.GetWindowText( sSendTimes );
+        m_pSocketHandler->SetSendTimes( _ttol( sSendTimes ) );
+        
         if ( !m_pSocketHandler->Send() )
         {
             MessageBox( _T( "·¢ËÍÊ§°Ü" ), _T( "·¢Éú´íÎó" ), MB_OK );

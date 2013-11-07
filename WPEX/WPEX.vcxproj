@@ -40,13 +40,13 @@
     <IntDir>Debug\</IntDir>
     <OutDir>$(ProjectDir)..\bin\$(Configuration)\</OutDir>
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>G:\Project\ThirdPartLib\c\wtl\include;$(IncludePath)</IncludePath>
+    <IncludePath>G:\Project\ThirdPartLib\c\wtl\include;E:\3PartLib\wtl\trunk\wtl\include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <IntDir>Release\</IntDir>
     <OutDir>$(ProjectDir)..\bin\$(Configuration)\</OutDir>
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>G:\Project\ThirdPartLib\c\wtl\include;$(IncludePath)</IncludePath>
+    <IncludePath>G:\Project\ThirdPartLib\c\wtl\include;E:\3PartLib\wtl\trunk\wtl\include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>

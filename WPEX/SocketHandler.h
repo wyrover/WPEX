@@ -12,6 +12,7 @@ private:
     char* m_packetData;
     DWORD m_dwPacketSize;
     WSAPROTOCOL_INFO* m_pPtotocol;
+    int m_sendTimes;
 public:
     CSocketSendHandler()
     {
@@ -20,7 +21,7 @@ public:
         m_packetData = NULL;
         m_pPtotocol = NULL;
         m_dwPacketSize = 0;
-        
+        m_sendTimes = 1;
         WSADATA wsaData;
         WSAStartup( 0x202, &wsaData );
     }
@@ -41,6 +42,11 @@ public:
         
         //绝对不能调用WSACleanup(),会使原始进程的远程主机关闭连接
     }
+
+	void SetSendTimes(int iSendTimes)
+	{
+		m_sendTimes=iSendTimes;
+	}
     
     void SetSendModel( SENDMODEL sendModel )
     {
@@ -113,21 +119,65 @@ public:
             }
             case SEND_BY_RAWSOCKET:
             {
-                // 		WSABUF wsaBuf;
-                // 		wsaBuf.buf=(char*)m_buf;
-                // 		wsaBuf.len=m_iLen;
-                // 		DWORD NumberOfBytesSent=0;
-                // 		int iRet=WSASend(m_socket,&wsaBuf,1,&NumberOfBytesSent,0,0,0);
-                
-                // 以上代码也可用
-                SOCKET socket = WSASocket( AF_INET, SOCK_STREAM, IPPROTO_TCP, m_pPtotocol, 0, 0 );
-                int iRet = send( socket, m_packetData, m_dwPacketSize, 0 );
-                return ( iRet != SOCKET_ERROR );
+                return OpenSendByAsync();
+                //				return OpenSendBySync();
                 break;
             }
             default:
                 break;
         }
+        return FALSE;
+    }
+    
+    BOOL OpenSendBySync()
+    {
+        SOCKET socket = WSASocket( AF_INET, SOCK_STREAM, IPPROTO_TCP, m_pPtotocol, 0, 0 );
+        int iRet = send( socket, m_packetData, m_dwPacketSize, 0 );
+        return ( iRet != SOCKET_ERROR );
+    }
+    
+    BOOL OpenSendByAsync()
+    {
+        do
+        {
+            SOCKET socket = WSASocket( AF_INET, SOCK_STREAM, IPPROTO_TCP, m_pPtotocol, 0, 0 );
+            WSAOVERLAPPED SendOverlapped;
+            SecureZeroMemory( ( PVOID ) & SendOverlapped, sizeof( WSAOVERLAPPED ) );
+            SendOverlapped.hEvent = WSACreateEvent();
+            WSABUF wsaBuf;
+            wsaBuf.buf = ( char* )m_packetData;
+            wsaBuf.len = m_dwPacketSize;
+            DWORD dwSendedBytes = 0;
+            int rc = 0;
+            for ( int i = 0; (i <= m_sendTimes) && (m_dwPacketSize>0); i++ )
+            {
+                rc = WSASend( socket, &wsaBuf, 1, &dwSendedBytes, 0, &SendOverlapped, NULL );
+                if ( ( rc == SOCKET_ERROR ) && ( WSA_IO_PENDING != WSAGetLastError() ) )
+                {
+                    break;
+                }
+            }
+            rc = WSAWaitForMultipleEvents( 1, &SendOverlapped.hEvent, TRUE, INFINITE, TRUE );
+            if ( rc == WSA_WAIT_FAILED )
+            {
+                printf( "WSAWaitForMultipleEvents failed with error: %d\n", WSAGetLastError() );
+                break;
+            }
+            
+            DWORD Flags = 0;
+            rc = WSAGetOverlappedResult( socket, &SendOverlapped, &dwSendedBytes, FALSE, &Flags );
+            if ( rc == FALSE )
+            {
+                printf( "WSASend failed with error: %d\n", WSAGetLastError() );
+                break;
+            }
+            
+            printf( "Wrote %d bytes\n", dwSendedBytes );
+            
+            WSAResetEvent( SendOverlapped.hEvent );
+            return TRUE;
+        }
+        while ( FALSE );
         return FALSE;
     }
 };

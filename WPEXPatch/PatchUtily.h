@@ -1,7 +1,7 @@
 #pragma once
 #include <windows.h>
-#include "mhook.h"
-#pragma comment(lib,"mhookLib.lib")
+#include "..\mHook\mhook.h"
+#pragma comment(lib,"..\\mHook\\mhookLib.lib")
 #include <tchar.h>
 #include <winsock2.h>
 #pragma comment(lib,"Ws2_32.lib")
